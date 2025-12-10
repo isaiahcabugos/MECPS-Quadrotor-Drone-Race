@@ -1,0 +1,6 @@
+{
+  "timesteps": 7050000,
+  "total_episodes": 2487,
+  "avg_return_100": 0.0,
+  "timestamp": "2025-10-31T09:33:48.461138"
+}

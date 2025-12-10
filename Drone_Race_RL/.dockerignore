@@ -1,0 +1,37 @@
+# .dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+.git/
+.vscode/
+.idea/
+*.log
+
+# CRITICAL: Don't bake these into the image
+checkpoints/
+logs/
+notebooks/
+tests/
+test_output/
+drone_training_outputs/
+*.png
+*.jpg
+*.json
+testsims.py
+visualizetests.py
+
+# Large checkpoint files
+*.data-00000-of-00001
+*.index
+checkpoint
+
+# Python virtual environments
+venv/
+env/
