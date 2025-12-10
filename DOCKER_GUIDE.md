@@ -91,7 +91,7 @@ docker run --gpus all \
 docker logs -f drone-train-gpu
 ```
 
-**Training time:** ~6-8 hours for 100M steps (RTX 3090/4090)
+**Training time:** ~25 Hours with i5-13600k and no GPU support. Unsure how much a GPU will affect this.
 
 ---
 
@@ -99,7 +99,7 @@ docker logs -f drone-train-gpu
 
 **Purpose:** Train without GPU (slower but more portable)
 
-**Hardware:** Any CPU with 16+ GB RAM
+**Hardware:** Any CPU with 16+ GB RAM. In testing, RAM usage spiked at the beginning but lowered near the end. Unsure what caused that.
 
 **Use when:** No GPU available, testing, small experiments
 
@@ -122,7 +122,7 @@ docker run \
 docker logs -f drone-train-cpu
 ```
 
-**Training time:** ~48-72 hours for 100M steps (multi-core CPU)
+**Training time:** ~25 hours for 100M steps. Refer to report.
 
 ---
 
@@ -155,7 +155,7 @@ docker run -d \
 docker logs -f drone-finetune
 ```
 
-**Training time:** ~2-4 hours for 20M steps (depends on CPU cores)
+**Training time:** ~5 hours for 20M steps (depends on CPU)
 
 ---
 
