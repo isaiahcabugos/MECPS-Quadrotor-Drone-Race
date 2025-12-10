@@ -1,0 +1,56 @@
+# CPU-only base image (no CUDA)
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# Install Python 3.9
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.9 \
+    python3.9-venv \
+    python3.9-dev \
+    python3-pip \
+    build-essential \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+RUN python3.9 -m pip install --upgrade pip setuptools wheel
+
+# Install TensorFlow CPU version (lighter, no CUDA dependencies)
+RUN pip install --no-cache-dir tensorflow-cpu==2.13.0 numpy==1.24.3
+
+# Install TF-Agents
+RUN pip install --no-cache-dir tf-agents==0.17.0
+
+# Install remaining dependencies
+RUN pip install --no-cache-dir \
+    stable-baselines3[extra] \
+    gymnasium==0.29.1 \
+    matplotlib==3.7.2 \
+    tensorboard==2.13.0 \
+    tqdm==4.66.1 \
+    pandas==2.0.3 \
+    scipy==1.10.1 \
+    scikit-learn==1.3.0 \
+    psutil
+
+WORKDIR /workspace
+
+# Copy source code
+COPY src/ /workspace/src/
+COPY configs/ /workspace/configs/
+COPY train.py /workspace/
+
+# Create output directories
+RUN mkdir -p /workspace/checkpoints /workspace/logs
+
+EXPOSE 6006
+
+CMD ["python3", "finetune_with_residuals.py", "--residual-model", "dynamics_residual_model.pkl"]

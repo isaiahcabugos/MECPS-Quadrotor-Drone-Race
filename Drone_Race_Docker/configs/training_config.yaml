@@ -1,0 +1,46 @@
+# Training configuration
+training:
+  total_timesteps: 20000000
+  checkpoint_freq: 1000000
+  n_steps_per_env: 1500
+  num_parallel_envs: 64
+
+agent:
+  learning_rate: 0.0003
+  num_epochs: 10
+  discount_factor: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  entropy_coef: 0.01
+
+network:
+  actor_layers: [128, 128]
+  value_layers: [128, 128]
+  activation: leaky_relu
+```
+
+---
+
+### **`.dockerignore`**
+```
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+.git/
+.vscode/
+.idea/
+*.log
+checkpoints/
+logs/
+notebooks/
+.ipynb_checkpoints/
+*.deb
+venv/
+env/
