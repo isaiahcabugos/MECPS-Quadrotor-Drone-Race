@@ -25,6 +25,10 @@ Quick guide for collecting dynamics residuals in Gazebo after completing 100M+ t
 - Improve policy performance in Gazebo by fine-tuning with learned corrections
 - Prepare for eventual real hardware deployment
 
+**Important Note:**
+- This section is the most incomplete. Likely that the residual collection process has many flaws,
+    but the general process in this guide is correct.
+
 ---
 
 ## Step 1: Launch Gazebo Environment
@@ -68,10 +72,16 @@ rostopic echo /aruco_detect/markers
 
 Quick test to verify the trained policy works in Gazebo before collecting data.
 
+**IMPORTANT NOTE:**
+- You would test whichever model you are most comfortable with. Around 100_000_000 works best.
+    Furthermore, the model_controller code currently always tests with the gates specified in the code.
+    The arguments in the command line call do nothing. I suggest updating the code to allow for
+    more controlled residual collection.
+
 ```bash
 cd /path/to/catkin_ws/src/clover/clover/examples
 
-python3 model_controller_with_residuals.py \
+python3 model_controller_with_residuals_2.py \
     3.0 2.0 1.5 \
     /path/to/checkpoints/policy/policy_step_140000000
 
@@ -100,7 +110,7 @@ Collect 3-5 flights with different trajectories to capture diverse dynamics.
 
 **Flight 1: Aggressive Maneuvers**
 ```bash
-python3 model_controller_with_residuals.py \
+python3 model_controller_with_residuals_2.py \
     5.0 5.0 2.5 \
     /path/to/policy_step_140000000 \
     --collect-residuals
@@ -110,7 +120,7 @@ python3 model_controller_with_residuals.py \
 
 **Flight 2: Slow Flight**
 ```bash
-python3 model_controller_with_residuals.py \
+python3 model_controller_with_residuals_2.py \
     2.0 2.0 1.5 \
     /path/to/policy_step_140000000 \
     --collect-residuals
@@ -118,7 +128,7 @@ python3 model_controller_with_residuals.py \
 
 **Flight 3: Different Direction**
 ```bash
-python3 model_controller_with_residuals.py \
+python3 model_controller_with_residuals_2.py \
     -3.0 4.0 2.0 \
     /path/to/policy_step_140000000 \
     --collect-residuals
@@ -126,7 +136,7 @@ python3 model_controller_with_residuals.py \
 
 **Flight 4-5: Additional Coverage (Optional)**
 ```bash
-python3 model_controller_with_residuals.py \
+python3 model_controller_with_residuals_2.py \
     4.0 -3.0 3.0 \
     /path/to/policy_step_140000000 \
     --collect-residuals
@@ -318,54 +328,7 @@ xdg-open residual_analysis.png
 ## Step 7: Fine-Tune with Residual Model (Optional)
 
 Now that you have the residual model, you can fine-tune your policy to work better in Gazebo.
-
-**Update Simulator:**
-```python
-# In simulator.py or create residual_simulator.py
-import pickle
-
-class ResidualAugmentedSimulator(ImprovedCopterSimulator):
-    def __init__(self, residual_model_path, **kwargs):
-        super().__init__(**kwargs)
-        
-        # Load residual model
-        with open(residual_model_path, 'rb') as f:
-            residual_data = pickle.load(f)
-        
-        self.dynamics_knn = residual_data['knn_model']
-    
-    def _physics_step(self, velocity_setpoint_world):
-        # Standard physics...
-        
-        # Add dynamics residual
-        state_features = np.concatenate([
-            self.velocity,
-            velocity_setpoint_world
-        ])
-        residual_accel = self.dynamics_knn.predict([state_features])[0]
-        
-        # Apply residual
-        total_accel += residual_accel
-        
-        # Continue physics...
-```
-
-**Fine-Tune Training:**
-```bash
-# Continue training from 140M with residuals
-python train.py \
-    --total-steps 160000000 \
-    --checkpoint-freq 1000000 \
-    --num-envs 20 \
-    --use-gimbal \
-    --residual-model dynamics_residual_model.pkl
-```
-
-**Mixed Training (Recommended):**
-- 70% episodes: Residual-augmented simulator (Gazebo-like)
-- 30% episodes: Original simulator (avoid forgetting)
-
----
+Refer to docker guide.
 
 ## Quick Reference
 
@@ -376,12 +339,12 @@ roslaunch clover_simulation simulator.launch
 roslaunch clover_simulation aruco.launch
 
 # 2. Test policy (optional)
-python3 model_controller_with_residuals.py 3.0 2.0 1.5 /path/to/policy
+python3 model_controller_with_residuals_2.py 3.0 2.0 1.5 /path/to/policy
 
 # 3. Collect data (3-5 flights)
-python3 model_controller_with_residuals.py 5.0 5.0 2.5 /path/to/policy --collect-residuals
-python3 model_controller_with_residuals.py 2.0 2.0 1.5 /path/to/policy --collect-residuals
-python3 model_controller_with_residuals.py -3.0 4.0 2.0 /path/to/policy --collect-residuals
+python3 model_controller_with_residuals_2.py 5.0 5.0 2.5 /path/to/policy --collect-residuals
+python3 model_controller_with_residuals_2.py 2.0 2.0 1.5 /path/to/policy --collect-residuals
+python3 model_controller_with_residuals_2.py -3.0 4.0 2.0 /path/to/policy --collect-residuals
 
 # 4. Diagnose data
 python3 diagnose_residual_data.py residual_data_*.pkl
@@ -411,7 +374,7 @@ rosservice call /gazebo/unpause_physics
 
 **Problem: Control rate too slow (< 5 Hz)**
 ```python
-# Edit model_controller_with_residuals.py
+# Edit model_controller_with_residuals_2.py
 self.control_rate = 5.0  # Reduce from 10.0
 ```
 
@@ -428,6 +391,10 @@ self.control_rate = 5.0  # Reduce from 10.0
 ---
 
 ## Expected Results
+
+**IMPORTANT NOTE:**
+-You will likely not get good results as the code currently stands. As said before,
+    work is needed to get thte residual collection working.
 
 **Good Residual Model:**
 - ✅ Samples kept: > 250 (> 85%)
@@ -469,9 +436,7 @@ This process bridges the gap between your lightweight training simulator and rea
 5. ✅ Fine-tune policy with augmented simulator (optional 20M steps)
 6. ✅ Deploy fine-tuned policy back in Gazebo for validation
 
-**Total Time:** ~1-2 hours (data collection + processing)
-
-**Next Steps:** Use `dynamics_residual_model.pkl` for fine-tuning or deploy directly in Gazebo for testing!
+**Next Steps:** Use `dynamics_residual_model.pkl` for fine-tuning. Refer to docker guide.
 
 ---
 
